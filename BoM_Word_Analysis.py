@@ -9,9 +9,11 @@ import matplotlib.pyplot as plt
 import nltk
 import string
 from collections import Counter
+import re
+
 #%%
 # Import BOM
-os.chdir('/Users/douglasvalentine/Library/Mobile Documents/iCloud~com~omz-software~Pythonista3/Documents/Python')
+# os.chdir('/Users/douglasvalentine/Library/Mobile Documents/iCloud~com~omz-software~Pythonista3/Documents/Python')
 filepath = 'BoM.txt'
 
 file1 = open(filepath, 'r')
@@ -19,24 +21,32 @@ bom = file1.read()
 file1.close()
 
 #%%
-#handle then numbers
-numbers = []
-for i in range(0,101):
-    numbers.append(str(i))
+#Preprocessing
+patterns = [
+    '\d+ \D+ \d+\:\d+',
+    r'\n \d+',
+    'Chapter \d+',
+    '\d+ \D+ \d+'
+]
+bom_processed = bom
+for pat in patterns:
+    bom_processed = re.sub(pat, '', bom_processed)
+
+bom_processed = bom_processed.replace('\n', ' ')
 
 #%%
 stopwords = set(STOPWORDS)
 stopwords.update(["ye", "came", "pass", "behold",'yea','now',
-'helaman','nephi','alma','moroni','mormon','mosiah','jacob','may','thus',
-'therefore','even','will','unto','upon','thing','come','ether',
-'said','3','things','many','hath','thou','hast','thy'])
+'may','thus','project', 'gutenberg',
+'therefore','even','will','unto','upon','thing','come',
+'said','things','many','hath','thou','hast','thy'])
 stopwords.update(string.punctuation)
-stopwords.update(numbers)
+
 
 #%%
 wordcloud = WordCloud(stopwords=stopwords,background_color='white', \
     max_words=100,width=800, height=400, \
-    colormap='ocean').generate(bom)
+    colormap='ocean').generate(bom_processed.lower())
 plt.figure(figsize=(20,10))
 plt.imshow(wordcloud, interpolation='bilinear',aspect='equal')
 plt.axis('off')
@@ -46,7 +56,7 @@ plt.show()
 wordcloud.to_file('BOM_WC.png')
 
 #%%
-bom_data = [i for i in nltk.word_tokenize(bom.lower()) if i not in stopwords]
+bom_data = [i for i in nltk.word_tokenize(bom_processed.lower()) if i not in stopwords]
 
 #%%
 counts = dict(Counter(bom_data).most_common(40))
@@ -106,7 +116,7 @@ from bokeh.io import show, output_file
 from bokeh.models import ColumnDataSource, HoverTool
 
 #%%
-output_file('bokeh_bar.html')
+output_file('names-of-christ.html')
 
 source = ColumnDataSource(Jesus_Names)
 
@@ -114,6 +124,7 @@ p = figure(plot_height=500,x_range=list(Jesus_Names.index),title='Book of Mormon
 
 p.vbar(x='index', top='Counts', width=0.9, source=source, color='red')
 p.yaxis.axis_label = 'Frequency'
+p.xaxis.axis_label = 'Names'
 show(p)
 
 #%%
